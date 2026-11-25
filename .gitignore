@@ -19,3 +19,5 @@ plan.txt
 .vscode/
 .idea/
 .DS_Store
+
+modules/**/.terraform.lock.hcl
