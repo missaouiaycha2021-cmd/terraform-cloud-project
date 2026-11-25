@@ -1,0 +1,13 @@
+# Copiez en terraform.tfvars puis adaptez. Aucun secret ici.
+aws_region         = "us-east-1"
+availability_zones = ["us-east-1a", "us-east-1b"]
+environment        = "prod"
+project_name       = "cloud5"
+owner              = "votre-nom"
+vpc_cidr           = "10.20.0.0/16"
+instance_type      = "t3.small"
+min_size           = 2
+max_size           = 6
+db_instance_class  = "db.t3.small"
+db_multi_az        = true
+bucket_suffix      = "votre-identifiant"

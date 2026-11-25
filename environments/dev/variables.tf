@@ -61,6 +61,12 @@ variable "db_instance_class" {
   default     = "db.t3.micro"
 }
 
+variable "db_multi_az" {
+  type        = bool
+  description = "Active le standby RDS dans une autre zone (payant)"
+  default     = false
+}
+
 variable "bucket_suffix" {
   type        = string
   description = "Suffixe d'unicité du bucket applicatif (ex: votre identifiant)"

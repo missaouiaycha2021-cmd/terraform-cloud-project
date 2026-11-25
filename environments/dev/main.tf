@@ -31,6 +31,7 @@ module "database" {
   private_db_subnet_ids = module.network.private_db_subnet_ids
   db_sg_id              = module.security.db_sg_id
   db_instance_class     = var.db_instance_class
+  multi_az              = var.db_multi_az
   master_password       = var.db_password
 }
 
