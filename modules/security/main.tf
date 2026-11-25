@@ -31,7 +31,6 @@ resource "aws_vpc_security_group_ingress_rule" "alb_https" {
   to_port           = 443
 }
 
-# L'ALB ne peut parler qu'aux instances applicatives
 resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
   security_group_id            = aws_security_group.alb.id
   description                  = "Vers les instances applicatives"
@@ -63,7 +62,6 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   to_port                      = var.app_port
 }
 
-# Sortie : installation de paquets (via la NAT) et accès à la base
 resource "aws_vpc_security_group_egress_rule" "app_https" {
   security_group_id = aws_security_group.app.id
   description       = "HTTPS sortant (paquets, SSM, S3)"
@@ -111,67 +109,4 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
   ip_protocol                  = "tcp"
   from_port                    = var.db_port
   to_port                      = var.db_port
-}
-
-# ---------------------------------------------------------------
-# Rôle IAM des instances (moindre privilège)
-# ---------------------------------------------------------------
-data "aws_iam_policy_document" "ec2_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "app" {
-  name               = "${var.name_prefix}-app-role"
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-
-  tags = {
-    Name = "${var.name_prefix}-app-role"
-  }
-}
-
-# Accès administratif par SSM Session Manager : aucun SSH ouvert
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.app.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-# Accès limité au seul bucket applicatif, si fourni
-data "aws_iam_policy_document" "app_bucket" {
-  count = var.app_bucket_arn != "" ? 1 : 0
-
-  statement {
-    sid       = "ListBucket"
-    actions   = ["s3:ListBucket"]
-    resources = [var.app_bucket_arn]
-  }
-
-  statement {
-    sid       = "ReadWriteObjects"
-    actions   = ["s3:GetObject", "s3:PutObject"]
-    resources = ["${var.app_bucket_arn}/*"]
-  }
-}
-
-resource "aws_iam_role_policy" "app_bucket" {
-  count = var.app_bucket_arn != "" ? 1 : 0
-
-  name   = "${var.name_prefix}-app-bucket-access"
-  role   = aws_iam_role.app.id
-  policy = data.aws_iam_policy_document.app_bucket[0].json
-}
-
-resource "aws_iam_instance_profile" "app" {
-  name = "${var.name_prefix}-app-profile"
-  role = aws_iam_role.app.name
-
-  tags = {
-    Name = "${var.name_prefix}-app-profile"
-  }
 }
