@@ -10,7 +10,7 @@ variable "vpc_id" {
 
 variable "app_port" {
   type        = number
-  description = "Port HTTP sur lequel les instances applicatives reçoivent le trafic de l'ALB"
+  description = "Port sur lequel les instances applicatives reçoivent le trafic de l'ALB"
   default     = 80
 
   validation {
@@ -36,8 +36,8 @@ variable "enable_https" {
   default     = false
 }
 
-variable "app_bucket_arn" {
+variable "instance_profile_name" {
   type        = string
-  description = "ARN du bucket S3 applicatif auquel les instances peuvent accéder (vide = aucun accès S3)"
-  default     = ""
+  description = "Nom du profil d'instance IAM existant (AWS Academy : LabInstanceProfile)"
+  default     = "LabInstanceProfile"
 }
