@@ -37,6 +37,24 @@ variable "vpc_cidr" {
   default     = "10.20.0.0/16"
 }
 
+variable "public_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR des sous-réseaux publics"
+  default     = ["10.20.1.0/24", "10.20.2.0/24"]
+}
+
+variable "private_app_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR des sous-réseaux applicatifs"
+  default     = ["10.20.11.0/24", "10.20.12.0/24"]
+}
+
+variable "private_db_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR des sous-réseaux base de données"
+  default     = ["10.20.21.0/24", "10.20.22.0/24"]
+}
+
 variable "instance_type" {
   type        = string
   description = "Type d'instance EC2"
@@ -63,7 +81,7 @@ variable "db_instance_class" {
 
 variable "db_multi_az" {
   type        = bool
-  description = "Active le standby RDS dans une autre zone (payant)"
+  description = "Déploie RDS en Multi-AZ (payant)"
   default     = false
 }
 
