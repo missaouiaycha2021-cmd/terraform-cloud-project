@@ -1,0 +1,122 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environnement à déployer"
+        type: choice
+        options: [dev, test, prod]
+        default: dev
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.10.5"
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  check:
+    name: Qualité du code (fmt, validate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: terraform init et validate
+        run: |
+          for env in dev test prod; do
+            echo "=== $env ==="
+            terraform -chdir=environments/$env init -backend=false -input=false
+            terraform -chdir=environments/$env validate
+          done
+
+  plan:
+    name: Plan (${{ matrix.environment }})
+    needs: check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test, prod]
+    env:
+      TF_VAR_environment: ${{ matrix.environment }}
+      TF_VAR_owner: ${{ vars.OWNER }}
+      TF_VAR_bucket_suffix: ${{ vars.BUCKET_SUFFIX }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+    defaults:
+      run:
+        working-directory: environments/${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: terraform init
+        run: terraform init -input=false
+
+      - name: terraform plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Plan lisible
+        run: |
+          terraform show -no-color tfplan > plan.txt
+          { echo '### Plan ${{ matrix.environment }}'; echo '```'; cat plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ matrix.environment }}
+          path: environments/${{ matrix.environment }}/plan.txt
+
+  apply:
+    name: Apply (${{ inputs.environment }})
+    needs: check
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      TF_VAR_environment: ${{ inputs.environment }}
+      TF_VAR_owner: ${{ vars.OWNER }}
+      TF_VAR_bucket_suffix: ${{ vars.BUCKET_SUFFIX }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+    defaults:
+      run:
+        working-directory: environments/${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - run: terraform init -input=false
+      - run: terraform plan -input=false -out=tfplan
+      - run: terraform apply -input=false tfplan

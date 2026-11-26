@@ -45,7 +45,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
 # ---------------------------------------------------------------
 resource "aws_security_group" "app" {
   name        = "${var.name_prefix}-app-sg"
-  description = "Instances applicatives : trafic depuis l'ALB uniquement"
+  description = "Instances applicatives - trafic depuis le Load Balancer uniquement"
   vpc_id      = var.vpc_id
 
   tags = {
@@ -73,7 +73,7 @@ resource "aws_vpc_security_group_egress_rule" "app_https" {
 
 resource "aws_vpc_security_group_egress_rule" "app_http" {
   security_group_id = aws_security_group.app.id
-  description       = "HTTP sortant (dépôts de paquets)"
+  description       = "HTTP sortant (depots de paquets)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 80
@@ -82,7 +82,7 @@ resource "aws_vpc_security_group_egress_rule" "app_http" {
 
 resource "aws_vpc_security_group_egress_rule" "app_to_db" {
   security_group_id            = aws_security_group.app.id
-  description                  = "Vers la base de données"
+  description                  = "Vers la base de donnees"
   referenced_security_group_id = aws_security_group.db.id
   ip_protocol                  = "tcp"
   from_port                    = var.db_port
@@ -94,7 +94,7 @@ resource "aws_vpc_security_group_egress_rule" "app_to_db" {
 # ---------------------------------------------------------------
 resource "aws_security_group" "db" {
   name        = "${var.name_prefix}-db-sg"
-  description = "Base de données : connexions depuis les instances applicatives"
+  description = "Base de donnees - connexions depuis les instances applicatives"
   vpc_id      = var.vpc_id
 
   tags = {
