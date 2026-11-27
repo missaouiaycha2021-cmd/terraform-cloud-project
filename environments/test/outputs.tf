@@ -8,10 +8,10 @@ output "db_endpoint" {
   value       = module.database.endpoint
 }
 
-output "app_bucket_name" {
-  description = "Nom du bucket applicatif"
-  value       = module.storage.bucket_name
-}
+#output "app_bucket_name" {
+#  description = "Nom du bucket applicatif"
+ # value       = module.storage.bucket_name
+#}
 
 output "autoscaling_group_name" {
   description = "Nom de l'Auto Scaling Group"
