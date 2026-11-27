@@ -81,7 +81,12 @@ jobs:
       - name: Plan lisible
         run: |
           terraform show -no-color tfplan > plan.txt
-          { echo '### Plan ${{ matrix.environment }}'; echo '```'; cat plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '### Plan ${{ matrix.environment }}'
+            echo '```'
+            head -c 900000 plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -94,6 +99,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    concurrency:
+      group: terraform-${{ inputs.environment }}
+      cancel-in-progress: false
     env:
       TF_VAR_environment: ${{ inputs.environment }}
       TF_VAR_owner: ${{ vars.OWNER }}
@@ -117,6 +125,21 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - run: terraform init -input=false
-      - run: terraform plan -input=false -out=tfplan
-      - run: terraform apply -input=false tfplan
+      - name: terraform init
+        run: terraform init -input=false
+
+      - name: terraform plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Plan lisible
+        run: |
+          terraform show -no-color tfplan > plan.txt
+          {
+            echo '### Apply ${{ inputs.environment }}'
+            echo '```'
+            head -c 900000 plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: terraform apply
+        run: terraform apply -input=false tfplan
