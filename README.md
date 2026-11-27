@@ -71,3 +71,4 @@ Voir `docs/couts.md`. L'ALB, la NAT Gateway, les EC2 et RDS sont facturés : dé
 | `ExpiredToken` | Recopier les identifiants du Learner Lab |
 | Cibles *Unhealthy* | Attendre 3 minutes, vérifier la NAT Gateway et `user_data.sh` |
 | Nom de bucket déjà pris | Changer `bucket_suffix` |
+Test du pipeline CI/CD
